@@ -32,6 +32,9 @@ def rotate_90(f):
   g = f.transpose()
   return g
 
+def crop_binary(f):
+  r, c = f.nonzero()
+  return f[r[0]:r[-1]+1, c.min():c.max()+1]
 
 def four_squares(isImg=False):
   H = 300

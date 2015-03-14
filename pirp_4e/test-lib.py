@@ -13,16 +13,17 @@ class LibTest(unittest.TestCase):
 
   def test_normalize(self):
     np.testing.assert_array_equal(
-      lib.normalize([-1,1]), [0, 255])
+        lib.normalize([-1, 1]), [0, 255])
     np.testing.assert_array_equal(
-      lib.normalize([1,1]), [127, 127])
+        lib.normalize([1, 1]), [127, 127])
     np.testing.assert_array_equal(
-      lib.normalize([-0.1,0.1]), [0, 255])
+        lib.normalize([-0.1, 0.1]), [0, 255])
     np.testing.assert_array_equal(
-      lib.normalize(np.arange(-10,10)),
-      [0,13,26,40,53,67,80,93,107,120,134,147,161,174,187,201,214,228,241,255])
+        lib.normalize(np.arange(-10, 10)),
+        [0, 13, 26, 40, 53, 67, 80, 93, 107, 120, 134, 147, 161, 174, 187,
+         201, 214, 228, 241, 255])
     np.testing.assert_array_equal(
-      lib.normalize([[-1,1], [1, -1]]), [[0, 255], [255, 0]])
+        lib.normalize([[-1, 1], [1, -1]]), [[0, 255], [255, 0]])
 
   def test_add_grid(self):
     img = np.zeros(25).reshape(5, 5)
@@ -73,6 +74,23 @@ class LibTest(unittest.TestCase):
         [255, 255, 255, 255, 255],
         [255, 255, 255, 255, 255],
     ])
+
+    np.testing.assert_array_equal(actual, expected)
+
+  def test_crop_binary(self):
+    img = np.zeros(25).reshape(5, 5)
+    img[2:4, 2:4] = 1
+    actual = lib.crop_binary(img)
+    expected = np.array([
+        [1, 1],
+        [1, 1],
+    ])
+
+    np.testing.assert_array_equal(actual, expected)
+
+    img = np.ones(25).reshape(5, 5)
+    actual = lib.crop_binary(img)
+    expected = np.ones(25).reshape(5, 5)
 
     np.testing.assert_array_equal(actual, expected)
 
