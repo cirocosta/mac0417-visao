@@ -82,9 +82,33 @@ def equalize_histogram(img):
   return new_img.reshape(img.shape)
 
 
+def f(t):
+  return np.exp(-t) * np.cos(2*np.pi*t)
+
 def main():
-  img = ndimage.imread('../assets/lena.png', flatten=True)
-  plt.imshow(equalize_histogram(img), cmap="gray")
+  t1 = np.arange(0.0, 5.0, 0.1)
+  t2 = np.arange(0.0, 5.0, 0.02)
+
+  plt.figure(1)
+  plt.subplot(311)
+  plt.plot(t1, f(t1), 'bo', t2, f(t2), 'r')
+
+  plt.subplot(312)
+  plt.plot(t2, np.cos(2*np.pi*t2), 'r--')
+
+  plt.subplot(313)
+  mu, sigma = 100, 15
+  x = mu + sigma * np.random.randn(10000)
+
+  hist, bins, patches = plt.hist(x, 100, normed=1, facecolor='g', alpha=0.75)
+
+  plt.plot(x, np.cumsum(hist), 'r')
+
+  plt.xlabel('Smarts')
+  plt.ylabel('Probability')
+  plt.title('Histogram of IQ')
+  plt.text(60, .025, r'$x^2 + y^2 = r^2$')
+
   plt.show()
 
 
