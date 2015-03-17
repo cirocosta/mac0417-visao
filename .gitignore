@@ -1,4 +1,4 @@
 *.pyc
 *.pdf
 .env
-.ipython_checkpoints
+.ipynb_checkpoints
