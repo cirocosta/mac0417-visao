@@ -1,6 +1,6 @@
 import numpy as np
 import unittest
-import lib as lib
+from .. import lib
 
 
 class LibTest(unittest.TestCase):

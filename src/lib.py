@@ -12,6 +12,7 @@ def add_grid(f, delta, color=255):
   g = np.copy(f)
   g[::delta, :] = color
   g[:, ::delta] = color
+
   return g
 
 
@@ -29,14 +30,15 @@ def add_inner_border(f, size, color=255):
 
 
 def rotate_90(f):
-  g = f.transpose()
-  return g
+  return f.transpose()
+
 
 def crop_binary(f):
   r, c = f.nonzero()
-  return f[r[0]:r[-1]+1, c.min():c.max()+1]
+  return f[r[0]:r[-1] + 1, c.min():c.max() + 1]
 
-def four_squares(isImg=False):
+
+def gen_four_squares(isImg=False):
   H = 300
   W = 600
 
@@ -54,6 +56,10 @@ def four_squares(isImg=False):
 
 
 def normalize(arr, range=(0, 255)):
+  """
+  Based on minimum and maximimum values, performs
+  a linear interpolation of the values.
+  """
   arr = np.asarray(arr)
   faux = np.ravel(arr).astype(float)
   min_val = faux.min()
@@ -73,17 +79,26 @@ def normalize(arr, range=(0, 255)):
 
 
 def equalize_histogram(img):
-  # retrieve histogram data and also bins
-  hist, bins = np.histogram(img.flatten(), 256, normed=True)
-  cdf = hist.cumsum()
-  cdf = 255 * cdf / cdf[-1]
-  new_img = np.interp(img.flatten(), bins[:-1], cdf).reshape(img.shape)
+  """
+  T(r) = (L-1)/n * (\sum\limits_{i=0}^{r},h(i)),
+  where h(i) = hist(i).
+  """
+  # np.bincount() returns an array that, contains
+  # the number of occurences of each integer I,
+  # indexed by the array returned, i.e, out
+  # 'absolute' histogram (divide it by N and then
+  # we have a relative)
+  bins = np.bincount(img.ravel())
+  n = img.size
+  T = 255/n * np.cumsum(bins)
+  T = T.astype(uint8)
 
-  return new_img.reshape(img.shape)
+  return T[img]
 
 
 def f(t):
-  return np.exp(-t) * np.cos(2*np.pi*t)
+  return np.exp(-t) * np.cos(2 * np.pi * t)
+
 
 def main():
   t1 = np.arange(0.0, 5.0, 0.1)
@@ -94,7 +109,7 @@ def main():
   plt.plot(t1, f(t1), 'bo', t2, f(t2), 'r')
 
   plt.subplot(312)
-  plt.plot(t2, np.cos(2*np.pi*t2), 'r--')
+  plt.plot(t2, np.cos(2 * np.pi * t2), 'r--')
 
   plt.subplot(313)
   mu, sigma = 100, 15
