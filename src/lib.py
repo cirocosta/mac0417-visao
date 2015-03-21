@@ -2,10 +2,8 @@
 Basic funcionalitty shared all over the code
 """
 
+import math
 import numpy as np
-import matplotlib.pyplot as plt
-
-from scipy import ndimage
 
 
 def add_grid(f, delta, color=255):
@@ -38,24 +36,22 @@ def crop_binary(f):
   return f[r[0]:r[-1] + 1, c.min():c.max() + 1]
 
 
-def gen_four_squares(isImg=False):
-  H = 300
-  W = 600
+def gamma_correction(f, gamma):
+  g = np.copy(f)
+  t_gamma = normalize(np.arange(256) ** gamma)
 
-  if not isImg:
-    H /= 50
-    W /= 50
-
-  img = np.empty((H, W), "uint8")
-  img[:, :W / 2] = 64
-  img[:, W / 2:] = 192
-  img[H / 3:2 * H / 3, W / 6:2 * W / 6] = 128
-  img[H / 3:2 * H / 3, 2 * W / 3:5 * W / 6] = 128
-
-  return img
+  return t_gamma[g]
 
 
-def normalize(arr, range=(0, 255)):
+def naive_percentile(arr, p):
+  """
+  Gives the value below which a given percentage
+  of sorted observations fall.
+  """
+  return np.ceil(len(arr) * p / 100.0)
+
+
+def normalize(arr, range=(0, 255), percentile=1):
   """
   Based on minimum and maximimum values, performs
   a linear interpolation of the values.
@@ -78,6 +74,69 @@ def normalize(arr, range=(0, 255)):
   return g
 
 
+def normalize_with_clip(f, p):
+  p1, p2 = np.percentile(f, [p, 100 - p])
+  f = np.clip(f, p1, p2)
+
+  return normalize(f)
+
+def scale(val):
+  return np.array([
+    [val,0,0],
+    [0,val,0],
+    [0,0,1]]
+  )
+
+def rotate(theta):
+  return np.array([
+    [math.cos(theta),-math.sin(theta),0],
+    [math.sin(theta),math.cos(theta),0],
+    [0,0,1]
+  ])
+
+def translate(x,y):
+  return np.array([
+    [1,0,x],
+    [0,1,y],
+    [0,0,1]
+  ])
+
+def affine(f, T):
+  """Applies the affine transformation on a given
+  image.
+
+  ' g(r, c) = f(T^{-1}(r,c)) '
+
+  Direct mapping:
+    From image (f) map the values to image (g)
+    - g(T(r,c)) = f((r,c)) ,
+                  (r,c) in [0,H-1]x[0, W-1]
+    - con: T(r,c) might not fill every pixel of G
+
+  Indirect Mapping
+    From image (g) search the values in image (f)
+    - g(r', c') = f(T^{-1}(r', c')) ,
+                  (r', c') in [0, H'-1]x[0, W'-1]
+    - pro: every pixel of (g) receives a value
+  """
+  h, w = f.shape
+  y1, x1 = np.indices(f.shape)
+  g = np.lib.pad(f, 1, 'constant', constant_values=0)
+
+  yx1 = np.array([
+    y1.ravel(), x1.ravel(), np.ones(np.product(f.shape))
+  ])
+
+  yx_float = np.dot(np.linalg.inv(T), yx1)
+  yy = np.rint(yx_float[0]).astype(int)+1
+  xx = np.rint(yx_float[1]).astype(int)+1
+
+  y = np.clip(yy, 0, h+1)
+  x = np.clip(xx, 0, w+1)
+
+  return g[y, x].reshape(h, w)
+
+
 def equalize_histogram(img):
   """
   T(r) = (L-1)/n * (\sum\limits_{i=0}^{r},h(i)),
@@ -90,7 +149,7 @@ def equalize_histogram(img):
   # we have a relative)
   bins = np.bincount(img.ravel())
   n = img.size
-  T = 255/n * np.cumsum(bins)
+  T = 255 / n * np.cumsum(bins)
   T = T.astype(uint8)
 
   return T[img]
@@ -101,31 +160,20 @@ def f(t):
 
 
 def main():
-  t1 = np.arange(0.0, 5.0, 0.1)
-  t2 = np.arange(0.0, 5.0, 0.02)
+  import matplotlib.pyplot as plt
+  from scipy import ndimage
 
-  plt.figure(1)
-  plt.subplot(311)
-  plt.plot(t1, f(t1), 'bo', t2, f(t2), 'r')
+  # img = ndimage.imread('../assets/cameraman.tif', flatten=True)
+  # img = img.astype(np.uint8)
 
-  plt.subplot(312)
-  plt.plot(t2, np.cos(2 * np.pi * t2), 'r--')
+  # new_img = affine(img, translate(2,0))
 
-  plt.subplot(313)
-  mu, sigma = 100, 15
-  x = mu + sigma * np.random.randn(10000)
+  # plt.imshow(new_img, cmap="gray")
+  # plt.show()
 
-  hist, bins, patches = plt.hist(x, 100, normed=1, facecolor='g', alpha=0.75)
-
-  plt.plot(x, np.cumsum(hist), 'r')
-
-  plt.xlabel('Smarts')
-  plt.ylabel('Probability')
-  plt.title('Histogram of IQ')
-  plt.text(60, .025, r'$x^2 + y^2 = r^2$')
-
-  plt.show()
-
+  img = np.arange(12).reshape((3,4))
+  print img
+  print affine(img, translate(1,0))
 
 if __name__ == '__main__':
   main()
